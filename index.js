@@ -65,7 +65,7 @@ const fs = require('fs/promises');
       if (error instanceof SyntaxError) {
         console.error(`Error parsing JSON in '${wordsFilePath}':`, error.message);
       } else if (error.code) {
-        // File system error with error code
+        // File system errors (ENOENT, EACCES, etc.)
         console.error(`Error reading '${wordsFilePath}':`, error.message);
       } else {
         // Other unexpected errors
