@@ -16,8 +16,15 @@ const fs = require('fs/promises');
   try {
     await fs.access(wordsFilePath);
   } catch (error) {
-    console.error(`Error: Required file '${wordsFilePath}' not found.`);
-    console.error('Please ensure the words dictionary file exists before running the application.');
+    if (error.code === 'ENOENT') {
+      console.error(`Error: Required file '${wordsFilePath}' not found.`);
+      console.error('Please ensure the words dictionary file exists before running the application.');
+    } else if (error.code === 'EACCES') {
+      console.error(`Error: Permission denied accessing '${wordsFilePath}'.`);
+      console.error('Please check file permissions and try again.');
+    } else {
+      console.error(`Error: Cannot access '${wordsFilePath}':`, error.message);
+    }
     process.exit(1);
   }
 
@@ -57,8 +64,12 @@ const fs = require('fs/promises');
     } catch (error) {
       if (error instanceof SyntaxError) {
         console.error(`Error parsing JSON in '${wordsFilePath}':`, error.message);
-      } else {
+      } else if (error.code) {
+        // File system error with error code
         console.error(`Error reading '${wordsFilePath}':`, error.message);
+      } else {
+        // Other unexpected errors
+        console.error(`Unexpected error processing '${wordsFilePath}':`, error.message);
       }
       throw error;
     }
