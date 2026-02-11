@@ -12,6 +12,15 @@ const fs = require('fs/promises');
   // Specify the line number from which to start checking words
   const startLineNumber = 1;
 
+  // Check if required files exist
+  try {
+    await fs.access(wordsFilePath);
+  } catch (error) {
+    console.error(`Error: Required file '${wordsFilePath}' not found.`);
+    console.error('Please ensure the words dictionary file exists before running the application.');
+    process.exit(1);
+  }
+
   const browser = await puppeteer.launch({
     headless: false,
     args: [
@@ -41,8 +50,14 @@ const fs = require('fs/promises');
     await page.click('.sc-bilyIR.iAHaiv');
     console.log('Second div acting as button clicked successfully');
 
-    const wordsFile = await fs.readFile(wordsFilePath);
-    const wordsData = JSON.parse(wordsFile);
+    let wordsData;
+    try {
+      const wordsFile = await fs.readFile(wordsFilePath);
+      wordsData = JSON.parse(wordsFile);
+    } catch (error) {
+      console.error(`Error reading or parsing '${wordsFilePath}':`, error.message);
+      throw error;
+    }
 
     const validWords = [];
     let lineNumber = 0;
@@ -73,7 +88,11 @@ const fs = require('fs/promises');
           console.log(`"${word}" is a valid word.`);
           validWords.push(word);
           // Save valid words immediately to JSON file
-          await fs.writeFile(outputFilePath, JSON.stringify({ validWords }));
+          try {
+            await fs.writeFile(outputFilePath, JSON.stringify({ validWords }));
+          } catch (error) {
+            console.error(`Error writing to '${outputFilePath}':`, error.message);
+          }
         } else {
           console.log(`"${word}" is an invalid word. Ignoring...`);
         }
@@ -87,7 +106,14 @@ const fs = require('fs/promises');
         }, inputSelector);
 
         // Clear processing file
-        await fs.unlink(processingFilePath);
+        try {
+          await fs.unlink(processingFilePath);
+        } catch (error) {
+          // Ignore error if file doesn't exist
+          if (error.code !== 'ENOENT') {
+            console.error(`Error deleting '${processingFilePath}':`, error.message);
+          }
+        }
       }
     }
 
