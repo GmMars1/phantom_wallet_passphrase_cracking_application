@@ -60,9 +60,8 @@ const fs = require('fs/promises');
         throw parseError;
       }
     } catch (error) {
-      if (error.code === 'ENOENT') {
-        console.error(`Error: File '${wordsFilePath}' not found.`);
-      } else if (!error.message.includes('JSON')) {
+      // Check if this is not a JSON parsing error (which has already been logged)
+      if (!(error instanceof SyntaxError)) {
         console.error(`Error reading '${wordsFilePath}':`, error.message);
       }
       throw error;
