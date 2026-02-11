@@ -53,15 +53,11 @@ const fs = require('fs/promises');
     let wordsData;
     try {
       const wordsFile = await fs.readFile(wordsFilePath);
-      try {
-        wordsData = JSON.parse(wordsFile);
-      } catch (parseError) {
-        console.error(`Error parsing JSON in '${wordsFilePath}':`, parseError.message);
-        throw parseError;
-      }
+      wordsData = JSON.parse(wordsFile);
     } catch (error) {
-      // Check if this is not a JSON parsing error (which has already been logged)
-      if (!(error instanceof SyntaxError)) {
+      if (error instanceof SyntaxError) {
+        console.error(`Error parsing JSON in '${wordsFilePath}':`, error.message);
+      } else {
         console.error(`Error reading '${wordsFilePath}':`, error.message);
       }
       throw error;
@@ -119,9 +115,10 @@ const fs = require('fs/promises');
         try {
           await fs.unlink(processingFilePath);
         } catch (error) {
-          // Ignore error if file doesn't exist
+          // Ignore error if file doesn't exist, otherwise log and continue
           if (error.code !== 'ENOENT') {
-            console.error(`Error deleting '${processingFilePath}':`, error.message);
+            console.warn(`Warning: Could not delete '${processingFilePath}':`, error.message);
+            console.warn('Continuing execution...');
           }
         }
       }
