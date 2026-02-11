@@ -53,9 +53,18 @@ const fs = require('fs/promises');
     let wordsData;
     try {
       const wordsFile = await fs.readFile(wordsFilePath);
-      wordsData = JSON.parse(wordsFile);
+      try {
+        wordsData = JSON.parse(wordsFile);
+      } catch (parseError) {
+        console.error(`Error parsing JSON in '${wordsFilePath}':`, parseError.message);
+        throw parseError;
+      }
     } catch (error) {
-      console.error(`Error reading or parsing '${wordsFilePath}':`, error.message);
+      if (error.code === 'ENOENT') {
+        console.error(`Error: File '${wordsFilePath}' not found.`);
+      } else if (!error.message.includes('JSON')) {
+        console.error(`Error reading '${wordsFilePath}':`, error.message);
+      }
       throw error;
     }
 
@@ -91,7 +100,9 @@ const fs = require('fs/promises');
           try {
             await fs.writeFile(outputFilePath, JSON.stringify({ validWords }));
           } catch (error) {
-            console.error(`Error writing to '${outputFilePath}':`, error.message);
+            console.error(`CRITICAL ERROR: Failed to write to '${outputFilePath}':`, error.message);
+            console.error('Valid words are not being saved! Stopping execution.');
+            throw error;
           }
         } else {
           console.log(`"${word}" is an invalid word. Ignoring...`);
